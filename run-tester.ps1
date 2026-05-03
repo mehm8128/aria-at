@@ -57,7 +57,42 @@ function Global:Wait-For-HTTP-Response {
 }
 
 # -----------------------------------------------------------------------------
-# NVDA + at-driver の起動
+# at-driver の起動 / 停止用ヘルパ
+# -----------------------------------------------------------------------------
+# at-driver はテストごとに再起動が必要 (前テストのセッション状態が残ると
+# 次のテストが失敗するため)。ループ内から繰り返し呼び出せるよう関数化。
+# Start-Job ではなく Start-Process を使うのは、Stop-Job だと子プロセスの
+# main.exe が確実に終了しない可能性があるため。Process オブジェクトを
+# 直接扱って Stop-Process で確実に殺す。
+# -----------------------------------------------------------------------------
+function Global:Start-AtDriver {
+  param([string]$LogFile)
+  Write-Output "Starting at-driver -> $LogFile"
+  # stderr は親プロセス (workflow の "Run harness" ステップ標準出力) に流す。
+  # 別ファイルに切り出すと .err ファイルが artifact を散らかすため。
+  $proc = Start-Process -FilePath ".\main.exe" `
+    -WorkingDirectory "$pwd\nvda-at-automation\Server" `
+    -RedirectStandardOutput $LogFile `
+    -PassThru `
+    -NoNewWindow
+  Write-Output "Waiting for localhost:3031 to start from at-driver"
+  Wait-For-HTTP-Response -RequestURL http://localhost:3031
+  return $proc
+}
+
+function Global:Stop-AtDriver {
+  param($Process)
+  if ($Process -and -not $Process.HasExited) {
+    Write-Output "Stopping at-driver (PID $($Process.Id))"
+    Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+    Wait-Process -Id $Process.Id -Timeout 5 -ErrorAction SilentlyContinue
+  }
+  # 念のため孤児になった main.exe を一掃 (安全弁)
+  Get-Process -Name main -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+}
+
+# -----------------------------------------------------------------------------
+# NVDA の起動 (1 回のみ。at-driver はループ内で再起動するためここでは起こさない)
 # -----------------------------------------------------------------------------
 if ($env:NVDA_PORTABLE_ZIP)
 {
@@ -72,14 +107,7 @@ if ($env:NVDA_PORTABLE_ZIP)
   Write-Output "Waiting for localhost:8765 to start from NVDA"
   Wait-For-HTTP-Response -RequestURL http://localhost:8765/info
 
-  # at-driver を別ジョブとしてバックグラウンド起動。
-  # 標準出力/エラーを at-driver.log にリダイレクト。
-  Write-Output "Starting at-driver"
-  $atprocess = Start-Job -Init ([ScriptBlock]::Create("Set-Location '$pwd\nvda-at-automation\Server'")) -ScriptBlock { & .\main.exe 2>&1 >$using:loglocation\at-driver.log }
-  Write-Output "Waiting for localhost:3031 to start from at-driver"
-  Wait-For-HTTP-Response -RequestURL http://localhost:3031
-
-  # harness が接続する WebSocket URL
+  # harness が接続する WebSocket URL (at-driver は後でループ内で起動)
   $atDriverUrl = "ws://127.0.0.1:3031/session"
 }
 
@@ -187,7 +215,18 @@ foreach ($plan in $plansToRun) {
   # ログファイル名はプランディレクトリの末尾セグメントを使う
   $planName = ($plan -split '[/\\]')[-1]
   Write-Output "===== Running harness for $plan -> harness-run-$planName.log ====="
-  ./node_modules/.bin/aria-at-harness-host run-plan --plan-workingdir "aria-at/build/$plan" $env:ARIA_AT_TEST_PATTERN $hostParams --web-driver-url=http://127.0.0.1:4444 --at-driver-url=$atDriverUrl --reference-hostname=127.0.0.1 --web-driver-browser=$env:BROWSER | Tee-Object -FilePath "$loglocation\harness-run-$planName.log"
+
+  # at-driver をテストごとに新規起動 (前テストの状態を持ち越さないため)
+  $atProc = Start-AtDriver -LogFile "$loglocation\at-driver-$planName.log"
+
+  try {
+    ./node_modules/.bin/aria-at-harness-host run-plan --plan-workingdir "aria-at/build/$plan" $env:ARIA_AT_TEST_PATTERN $hostParams --web-driver-url=http://127.0.0.1:4444 --at-driver-url=$atDriverUrl --reference-hostname=127.0.0.1 --web-driver-browser=$env:BROWSER | Tee-Object -FilePath "$loglocation\harness-run-$planName.log"
+  }
+  finally {
+    # 例外時でも必ず at-driver を停止し、次イテレーションでポート 3031 を再利用できるようにする
+    Stop-AtDriver -Process $atProc
+    Start-Sleep -Seconds 2  # ポート解放を待つ猶予
+  }
 }
 
 # テスト直後の画面状態を test2.png に保存
