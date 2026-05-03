@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8">
+  <title>Text Input with aria-describedby Example</title>
+</head>
+
+<body>
+  <main>
+    <h1>Text Input with aria-describedby Example</h1>
+    <p>
+      The below example demonstrates a text input with the <code>aria-describedby</code> attribute.
+    </p>
+    <section>
+      <div class="example-header">
+        <h2 id="ex_label">Example</h2>
+      </div>
+      <div role="separator" id="ex_start_sep" aria-labelledby="ex_start_sep ex_label" aria-label="Start of"></div>
+      <div id="ex1">
+        <a id="beforelink" href="#beforelink">Navigate forwards from here</a>
+        <form>
+          <label for="fname">名前</label>
+          <input name="" type="text" id="fname" aria-describedby="int2">
+          <p id="int2">aria-describedbyでリンクされたこの分野のちょっとした指示です。</p>
+        </form>
+        <a id="afterlink" href="#afterlink">Navigate backwards from here</a>
+      </div>
+      <div role="separator" id="ex_end_sep" aria-labelledby="ex_end_sep ex_label" aria-label="End of"></div>
+    </section>
+  </main>
+</body>
+
+</html>

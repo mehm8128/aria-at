@@ -1,0 +1,4 @@
+setupScript,setupScriptDescription
+setFocusBeforeInput,sets focus on a link before the text input
+setFocusAfterInput,sets focus on a link after the text input
+setFocusOnInput,sets focus on the text input

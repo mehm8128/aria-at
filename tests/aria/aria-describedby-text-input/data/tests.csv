@@ -1,0 +1,4 @@
+testId,title,presentationNumber,setupScript,instructions,assertions
+navForwardsToInput,Navigate forwards to a text input with aria-describedby,5,setFocusBeforeInput,"Starting at the 'Navigate forwards from here' link, navigate to the '名前' text input.",nameOfInput descriptionOfInput
+navBackToInput,Navigate backwards to a text input with aria-describedby,6,setFocusAfterInput,"Starting at the 'Navigate backwards from here' link, navigate to the '名前' text input.",nameOfInput descriptionOfInput
+reqInfoAboutInput,Request information about a text input with aria-describedby,9,setFocusOnInput,"Starting at the '名前' text input, read information about the text input.",nameOfInput descriptionOfInput

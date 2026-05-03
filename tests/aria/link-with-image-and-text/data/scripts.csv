@@ -1,0 +1,4 @@
+setupScript,setupScriptDescription
+setFocusBeforeLink,sets focus on a link before the target link
+setFocusAfterLink,sets focus on a link after the target link
+setFocusOnLink,sets focus on the target link

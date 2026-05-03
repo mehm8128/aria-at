@@ -1,0 +1,4 @@
+testId,command,settings,assertionExceptions,presentationNumber
+navForwardsToLink,down,browseMode,,1
+navBackToLink,up,browseMode,,2
+reqInfoAboutLink,ins+tab,browseMode,,7

@@ -1,0 +1,8 @@
+[submodule "aria-at-automation-harness"]
+	path = aria-at-automation-harness
+	url = git@github.com:w3c/aria-at-automation-harness.git
+	ignore = dirty
+[submodule "nvda-at-automation"]
+	path = nvda-at-automation
+	url = git@github.com:Prime-Access-Consulting/nvda-at-automation.git
+  ignore = dirty

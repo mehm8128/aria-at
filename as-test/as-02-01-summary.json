@@ -1,0 +1,101 @@
+﻿{
+  "name": "unknown",
+  "tests": [
+    {
+      "id": "navForwardsToLink",
+      "filepath": "test-05-navForwardsToLink-nvda.collected.json",
+      "results": [
+        {
+          "presentationNumber": 5,
+          "capabilities": {
+            "atName": "NVDA",
+            "atVersion": "2024.3.1jp",
+            "browserName": "chrome",
+            "browserVersion": "147.0.7727.138",
+            "platformName": "windows"
+          },
+          "commands": [
+            {
+              "command": "down",
+              "response": " link\n graphic\n ウェブアクセシビリティ基盤委員会\n 公式サイト",
+              "assertions": [
+                {
+                  "expectation": "Role 'link' is conveyed",
+                  "verdict": null
+                },
+                {
+                  "expectation": "Name of the link, 'ウェブアクセシビリティ基盤委員会 公式サイト', is conveyed",
+                  "verdict": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navBackToLink",
+      "filepath": "test-06-navBackToLink-nvda.collected.json",
+      "results": [
+        {
+          "presentationNumber": 6,
+          "capabilities": {
+            "atName": "NVDA",
+            "atVersion": "2024.3.1jp",
+            "browserName": "chrome",
+            "browserVersion": "147.0.7727.138",
+            "platformName": "windows"
+          },
+          "commands": [
+            {
+              "command": "up",
+              "response": " link\n graphic\n ウェブアクセシビリティ基盤委員会\n 公式サイト",
+              "assertions": [
+                {
+                  "expectation": "Role 'link' is conveyed",
+                  "verdict": null
+                },
+                {
+                  "expectation": "Name of the link, 'ウェブアクセシビリティ基盤委員会 公式サイト', is conveyed",
+                  "verdict": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reqInfoAboutLink",
+      "filepath": "test-09-reqInfoAboutLink-nvda.collected.json",
+      "results": [
+        {
+          "presentationNumber": 9,
+          "capabilities": {
+            "atName": "NVDA",
+            "atVersion": "2024.3.1jp",
+            "browserName": "chrome",
+            "browserVersion": "147.0.7727.138",
+            "platformName": "windows"
+          },
+          "commands": [
+            {
+              "command": "ins+tab",
+              "response": " ウェブアクセシビリティ基盤委員会 公式サイト\n link\n focused\n linked",
+              "assertions": [
+                {
+                  "expectation": "Role 'link' is conveyed",
+                  "verdict": null
+                },
+                {
+                  "expectation": "Name of the link, 'ウェブアクセシビリティ基盤委員会 公式サイト', is conveyed",
+                  "verdict": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

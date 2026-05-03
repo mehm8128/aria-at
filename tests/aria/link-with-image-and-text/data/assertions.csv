@@ -1,0 +1,3 @@
+assertionId,priority,assertionStatement,assertionPhrase,refIds
+nameOfLink,1,"Name of the link, 'ウェブアクセシビリティ基盤委員会 公式サイト', is conveyed","convey name of the link, 'ウェブアクセシビリティ基盤委員会 公式サイト'",link
+roleOfLink,1,"Role 'link' is conveyed","convey role 'link'",link

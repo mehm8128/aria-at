@@ -1,0 +1,4 @@
+testId,title,presentationNumber,setupScript,instructions,assertions
+navForwardsToLink,Navigate forwards to a link with image and text,5,setFocusBeforeLink,"Starting at the 'Navigate forwards from here' link, navigate to the 'ウェブアクセシビリティ基盤委員会 公式サイト' link.",roleOfLink nameOfLink
+navBackToLink,Navigate backwards to a link with image and text,6,setFocusAfterLink,"Starting at the 'Navigate backwards from here' link, navigate to the 'ウェブアクセシビリティ基盤委員会 公式サイト' link.",roleOfLink nameOfLink
+reqInfoAboutLink,Request information about a link with image and text,9,setFocusOnLink,"Starting at the 'ウェブアクセシビリティ基盤委員会 公式サイト' link, read information about the link.",roleOfLink nameOfLink

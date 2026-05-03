@@ -1,0 +1,4 @@
+testId,command,settings,assertionExceptions,presentationNumber
+navForwardsToInput,tab,focusMode,,1
+navBackToInput,shift+tab,focusMode,,2
+reqInfoAboutInput,ins+tab,focusMode,,7

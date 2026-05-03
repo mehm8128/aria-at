@@ -1,0 +1,7 @@
+refId,type,value,linkText
+author,metadata,WAIC,
+title,metadata,Link with Image and Text,
+reference,metadata,reference/2026-5-3/link-with-image-and-text.html,Test Case Page for Link with Image and Text Example
+designPattern,metadata,,
+example,metadata,https://waic.github.io/as_test/WAIC-TEST/HTML/WAIC-TEST-0002-01.html,WAIC-TEST-0002-01
+link,aria,link,link

@@ -1,0 +1,8 @@
+refId,type,value,linkText
+author,metadata,WAIC,
+title,metadata,aria-describedby on a Text Input,
+reference,metadata,reference/2026-5-3/aria-describedby-text-input.html,Test Case Page for aria-describedby on text input Example
+designPattern,metadata,,
+example,metadata,https://waic.github.io/as_test/WAIC-TEST/HTML/WAIC-TEST-0029-02.html,WAIC-TEST-0029-02
+aria-describedby,aria,aria-describedby,aria-describedby
+inputTypeText,htmlAam,inputTypeText,inputTypeText

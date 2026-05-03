@@ -18,8 +18,7 @@
     "update-reference": "node scripts/update-reference.js",
     "count": "node ./scripts/count-assertions.js",
     "make-v2": "node scripts/v2maker.js",
-    "test": "rimraf __test__/build && jest --runInBand",
-    "prepare": "husky"
+    "test": "rimraf __test__/build && jest --runInBand"
   },
   "dependencies": {
     "cross-var": "github:radozebra/cross-var#1.1.1",

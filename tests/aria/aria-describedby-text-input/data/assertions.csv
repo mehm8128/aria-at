@@ -1,0 +1,3 @@
+assertionId,priority,assertionStatement,assertionPhrase,refIds
+nameOfInput,1,"Name of the text input, '名前', is conveyed","convey name of the text input, '名前'",inputTypeText
+descriptionOfInput,1,"Description of the text input, 'aria-describedbyでリンクされたこの分野のちょっとした指示です。', is conveyed","convey description of the text input, 'aria-describedbyでリンクされたこの分野のちょっとした指示です。'",aria-describedby

@@ -1,0 +1,101 @@
+﻿{
+  "name": "unknown",
+  "tests": [
+    {
+      "id": "navForwardsToInput",
+      "filepath": "test-05-navForwardsToInput-nvda.collected.json",
+      "results": [
+        {
+          "presentationNumber": 5,
+          "capabilities": {
+            "atName": "NVDA",
+            "atVersion": "2024.3.1jp",
+            "browserName": "chrome",
+            "browserVersion": "147.0.7727.138",
+            "platformName": "windows"
+          },
+          "commands": [
+            {
+              "command": "tab",
+              "response": " 名前\n edit\n aria マイナス describedbyでリンクされたこの分野のちょっとした指示です マル\n blank",
+              "assertions": [
+                {
+                  "expectation": "Name of the text input, '名前', is conveyed",
+                  "verdict": null
+                },
+                {
+                  "expectation": "Description of the text input, 'aria-describedbyでリンクされたこの分野のちょっとした指示です。', is conveyed",
+                  "verdict": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navBackToInput",
+      "filepath": "test-06-navBackToInput-nvda.collected.json",
+      "results": [
+        {
+          "presentationNumber": 6,
+          "capabilities": {
+            "atName": "NVDA",
+            "atVersion": "2024.3.1jp",
+            "browserName": "chrome",
+            "browserVersion": "147.0.7727.138",
+            "platformName": "windows"
+          },
+          "commands": [
+            {
+              "command": "shift+tab",
+              "response": " 名前\n edit\n aria マイナス describedbyでリンクされたこの分野のちょっとした指示です マル\n blank",
+              "assertions": [
+                {
+                  "expectation": "Name of the text input, '名前', is conveyed",
+                  "verdict": null
+                },
+                {
+                  "expectation": "Description of the text input, 'aria-describedbyでリンクされたこの分野のちょっとした指示です。', is conveyed",
+                  "verdict": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reqInfoAboutInput",
+      "filepath": "test-09-reqInfoAboutInput-nvda.collected.json",
+      "results": [
+        {
+          "presentationNumber": 9,
+          "capabilities": {
+            "atName": "NVDA",
+            "atVersion": "2024.3.1jp",
+            "browserName": "chrome",
+            "browserVersion": "147.0.7727.138",
+            "platformName": "windows"
+          },
+          "commands": [
+            {
+              "command": "ins+tab",
+              "response": " 名前\n edit\n focused\n aria マイナス describedbyでリンクされたこの分野のちょっとした指示です マル\n blank",
+              "assertions": [
+                {
+                  "expectation": "Name of the text input, '名前', is conveyed",
+                  "verdict": null
+                },
+                {
+                  "expectation": "Description of the text input, 'aria-describedbyでリンクされたこの分野のちょっとした指示です。', is conveyed",
+                  "verdict": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
