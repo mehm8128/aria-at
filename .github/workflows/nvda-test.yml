@@ -38,8 +38,10 @@ on:
         description: |
           The --plan-workingdir passed to the aria-at-automation harness.
           Based from the aria-at repo build folder.
-          Uses a default of tests/aria/aria-describedby-text-input if not provided.
-          (テスト対象ディレクトリ。aria-at/build/ からの相対)
+          Uses a default of tests/aria if not provided.
+          (テスト対象。aria-at/build/ からの相対パス。
+           プランディレクトリ単体を指すと 1 件だけ実行、
+           親ディレクトリを指すと配下の全プランをループ実行)
         required: false
         type: string
 
@@ -61,7 +63,7 @@ on:
 # `||` で既定値を埋めている (workflow_dispatch の inputs はデフォルト値を持てないため)
 # -----------------------------------------------------------------------------
 env:
-  ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/aria/aria-describedby-text-input' }}
+  ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/aria' }}
   ARIA_AT_TEST_PATTERN: ${{ inputs.test_pattern || '{reference/**,test-*-nvda.*}'}}
   BROWSER: ${{ inputs.browser || 'chrome' }}
   NVDA_VERSION: ${{ inputs.nvda_version }}
@@ -206,9 +208,10 @@ jobs:
 
       # ---------------------------------------------------------------------
       # 9. テスト結果サマリの抽出
-      #     harness-run.log (harness の生 JSON) を as-test/extract-result.jq で
-      #     整形して summary.log に書き出す。冗長なログ (atDriverComms /
-      #     speechEvent の生ログ等) を削ぎ落とし、テスト結果本体だけ残す。
+      #     run-tester.ps1 が生成した harness-run-<planName>.log (harness の生 JSON)
+      #     を as-test/extract-result.jq で整形して summary-<planName>.log として
+      #     プランごとに書き出す。冗長なログ (atDriverComms / speechEvent の生ログ等)
+      #     を削ぎ落とし、テスト結果本体だけ残す。
       #     - jq は windows-2025 ランナーにプリインストール済み
       #     - if: always()           → harness が失敗しても可能なら整形を試みる
       #     - continue-on-error: true → jq 失敗で workflow 全体を落とさない
@@ -219,10 +222,16 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-          if (Test-Path harness-run.log) {
-            jq -f as-test/extract-result.jq harness-run.log | Out-File -Encoding utf8 summary.log
-          } else {
-            Write-Output "harness-run.log not found, skipping summary extraction"
+          $logs = Get-ChildItem -Path . -Filter "harness-run-*.log" -ErrorAction SilentlyContinue
+          if (-not $logs) {
+            Write-Output "No harness-run-*.log files found, skipping summary extraction"
+            return
+          }
+          foreach ($log in $logs) {
+            # "harness-run-<name>.log" から <name> を取り出す
+            $planName = $log.BaseName -replace '^harness-run-',''
+            Write-Output "Extracting summary for $planName"
+            jq -f as-test/extract-result.jq $log.FullName | Out-File -Encoding utf8 "summary-$planName.log"
           }
 
       # ---------------------------------------------------------------------

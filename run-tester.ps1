@@ -151,11 +151,44 @@ $bmp.Save("$loglocation\test.png")
 # - 引数の最後の要素 ($env:ARIA_AT_TEST_PATTERN) はテストファイルの glob
 # - --web-driver-url  : 上で起動した webdriver
 # - --at-driver-url   : 上で起動した at-driver (NVDA / JAWS)
-# - 実行ログは harness-run.log にも保存 (Tee-Object)
+# - 実行ログは harness-run-<planName>.log に保存 (Tee-Object)
+#
+# ARIA_AT_WORK_DIR が以下のどちらかに応じて挙動を変える:
+#   - 「葉」(test-* ファイルを直接含むプランディレクトリ)
+#       → そのディレクトリのみで harness を 1 回実行
+#   - 「親」(プランディレクトリの集合)
+#       → 配下の各プランで harness をループ実行
+#         (例: tests/aria を渡すと aria-describedby-text-input,
+#              link-with-image-and-text などをそれぞれ実行)
 # -----------------------------------------------------------------------------
 Write-Output "Launching automation-harness host"
 $hostParams = "--debug"
-./node_modules/.bin/aria-at-harness-host  run-plan --plan-workingdir aria-at/build/$env:ARIA_AT_WORK_DIR $env:ARIA_AT_TEST_PATTERN $hostParams --web-driver-url=http://127.0.0.1:4444 --at-driver-url=$atDriverUrl --reference-hostname=127.0.0.1 --web-driver-browser=$env:BROWSER | Tee-Object -FilePath $loglocation\harness-run.log
+
+$buildPath = "aria-at/build/$env:ARIA_AT_WORK_DIR"
+
+# ビルド出力に test-* ファイルが直接あれば「葉」、なければサブディレクトリ群とみなす
+$hasTestFiles = @(Get-ChildItem -Path $buildPath -Filter "test-*" -File -ErrorAction SilentlyContinue).Count -gt 0
+
+if ($hasTestFiles) {
+  $plansToRun = @($env:ARIA_AT_WORK_DIR)
+} else {
+  # 親ディレクトリのケース。test-* ファイルを含むサブディレクトリだけを抽出
+  # (data/ や _shared/ のような非プランディレクトリを除外する目的)
+  $plansToRun = Get-ChildItem -Path $buildPath -Directory -ErrorAction SilentlyContinue | Where-Object {
+    @(Get-ChildItem -Path $_.FullName -Filter "test-*" -File -ErrorAction SilentlyContinue).Count -gt 0
+  } | ForEach-Object {
+    "$($env:ARIA_AT_WORK_DIR)/$($_.Name)"
+  }
+}
+
+Write-Output "Plans to run ($($plansToRun.Count)): $($plansToRun -join ', ')"
+
+foreach ($plan in $plansToRun) {
+  # ログファイル名はプランディレクトリの末尾セグメントを使う
+  $planName = ($plan -split '[/\\]')[-1]
+  Write-Output "===== Running harness for $plan -> harness-run-$planName.log ====="
+  ./node_modules/.bin/aria-at-harness-host run-plan --plan-workingdir "aria-at/build/$plan" $env:ARIA_AT_TEST_PATTERN $hostParams --web-driver-url=http://127.0.0.1:4444 --at-driver-url=$atDriverUrl --reference-hostname=127.0.0.1 --web-driver-browser=$env:BROWSER | Tee-Object -FilePath "$loglocation\harness-run-$planName.log"
+}
 
 # テスト直後の画面状態を test2.png に保存
 $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
