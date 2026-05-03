@@ -67,11 +67,15 @@ function Global:Wait-For-HTTP-Response {
 # -----------------------------------------------------------------------------
 function Global:Start-AtDriver {
   param([string]$LogFile)
-  Write-Output "Starting at-driver -> $LogFile"
+  # Start-Process の -FilePath は -WorkingDirectory ではなく
+  # 呼び出し元の $pwd に対して相対解決される仕様なので、絶対パスを渡す。
+  $serverDir = Join-Path $pwd "nvda-at-automation\Server"
+  $mainExe   = Join-Path $serverDir "main.exe"
+  Write-Output "Starting at-driver ($mainExe) -> $LogFile"
   # stderr は親プロセス (workflow の "Run harness" ステップ標準出力) に流す。
   # 別ファイルに切り出すと .err ファイルが artifact を散らかすため。
-  $proc = Start-Process -FilePath ".\main.exe" `
-    -WorkingDirectory "$pwd\nvda-at-automation\Server" `
+  $proc = Start-Process -FilePath $mainExe `
+    -WorkingDirectory $serverDir `
     -RedirectStandardOutput $LogFile `
     -PassThru `
     -NoNewWindow
