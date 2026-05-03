@@ -47,4 +47,5 @@ node bin/host.js run-plan --plan-workingdir ../aria-at/build/tests/aria/test-cas
 
 ## 参考
 
-[ARIA-ATのNVDA操作自動化調査メモ - mehm8128](https://scrapbox.io/mehm8128/ARIA-AT%E3%81%AENVDA%E6%93%8D%E4%BD%9C%E8%87%AA%E5%8B%95%E5%8C%96%E8%AA%BF%E6%9F%BB%E3%83%A1%E3%83%A2)
+- [ARIA-ATのNVDA操作自動化調査メモ - mehm8128](https://scrapbox.io/mehm8128/ARIA-AT%E3%81%AENVDA%E6%93%8D%E4%BD%9C%E8%87%AA%E5%8B%95%E5%8C%96%E8%AA%BF%E6%9F%BB%E3%83%A1%E3%83%A2)
+- [テストの一覧 | as_test](https://waic.github.io/as_test/WAIC-TEST/HTML/)
