@@ -1,0 +1,242 @@
+# =============================================================================
+# nvda-test ワークフロー
+# -----------------------------------------------------------------------------
+# aria-at の NVDA 自動テストを GitHub Actions 上で実行するワークフロー。
+# bocoup/aria-at-gh-actions-helper の同名ワークフローをベースにしている。
+#
+# 必要なもの:
+#   - run-tester.ps1 (リポジトリ直下) ... テストランナー本体
+#   - windows-2025 ランナー (パブリックリポジトリなら無料)
+#
+# 起動方法:
+#   GitHub UI: Actions タブ → "nvda-test" → "Run workflow"
+#   CLI:       gh workflow run nvda-test.yml -f work_dir=tests/aria/aria-describedby-text-input
+# =============================================================================
+
+name: nvda-test
+
+on:
+  # workflow_dispatch のみ。手動トリガで起動する。
+  # (push をここに足すと workflow_dispatch ボタンが表示されない事象があるらしいので注意)
+  workflow_dispatch:
+    inputs:
+      # ----- aria-at リポジトリ関連 -----
+      aria_at_ref:
+        description: |
+          The sha / ref to checkout for aria-at tests
+          (mehm8128/aria-at の checkout 時に使う ref/SHA。未指定なら as-test)
+        required: false
+        type: string
+      test_pattern:
+        description: |
+          The test pattern passed to the aria-at-automation harness.
+          Uses a default of "{reference/**,test-*-nvda.*}" if not provided
+          (テストファイルの glob パターン。NVDA 用テストとリファレンスを既定で拾う)
+        required: false
+        type: string
+      work_dir:
+        description: |
+          The --plan-workingdir passed to the aria-at-automation harness.
+          Based from the aria-at repo build folder.
+          Uses a default of tests/aria/aria-describedby-text-input if not provided.
+          (テスト対象ディレクトリ。aria-at/build/ からの相対)
+        required: false
+        type: string
+
+      # ----- 実行環境 -----
+      browser:
+        description: |
+          The browser to use for testing, "chrome" "firefox" or "MicrosoftEdge", default "chrome"
+        required: false
+        type: string
+      nvda_version:
+        description: |
+          The specific version of NVDA to use (e.g., '2023.1'). If not provided, the latest version will be used.
+          (bocoup/aria-at-automation-nvda-builds リリースのタグ名)
+        required: false
+        type: string
+
+# -----------------------------------------------------------------------------
+# 環境変数: inputs を実行ステップに渡すための橋渡し。
+# `||` で既定値を埋めている (workflow_dispatch の inputs はデフォルト値を持てないため)
+# -----------------------------------------------------------------------------
+env:
+  ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/aria/aria-describedby-text-input' }}
+  ARIA_AT_TEST_PATTERN: ${{ inputs.test_pattern || '{reference/**,test-*-nvda.*}'}}
+  BROWSER: ${{ inputs.browser || 'chrome' }}
+  NVDA_VERSION: ${{ inputs.nvda_version }}
+
+jobs:
+  nvda-test:
+    # NVDA は Windows 専用なので Windows ランナー必須。
+    # windows-2025 は標準サイズなのでパブリックリポジトリでは課金されない。
+    runs-on: windows-2025
+    steps:
+
+      # ---------------------------------------------------------------------
+      # 1. リポジトリの checkout (キャッシュ効率のため最初にまとめて行う)
+      #    - 自リポジトリ (run-tester.ps1 がここに含まれている)
+      #    - Prime-Access-Consulting/nvda-at-automation (NVDA 操作用 Go サーバ)
+      #    - mehm8128/aria-at as-test ブランチ (テストプラン本体)
+      # ---------------------------------------------------------------------
+      - uses: actions/checkout@v4
+
+      - name: Checkout nvda-at-automation driver
+        uses: actions/checkout@v4
+        with:
+          repository: "Prime-Access-Consulting/nvda-at-automation"
+          path: "nvda-at-automation"
+          # 動作確認済みの SHA に固定。更新する場合は要動作確認。
+          ref: 1a84832d5889d56d6452230b971054f057bcdae2
+
+      - name: Checkout aria-at ref ${{ inputs.aria_at_ref || 'as-test' }}
+        uses: actions/checkout@v4
+        with:
+          repository: "mehm8128/aria-at"
+          path: "aria-at"
+          ref: ${{ inputs.aria_at_ref || 'as-test' }}
+
+      # ---------------------------------------------------------------------
+      # 2. aria-at-automation-harness をインストール
+      #    特定ブランチ/SHA をテストしたい場合は GitHub URL でも可:
+      #      npm install https://github.com/w3c/aria-at-automation-harness#branch-name
+      # ---------------------------------------------------------------------
+      - name: Install the ARIA-AT Automation Harness package
+        run: npm install @bocoup/aria-at-automation-harness@1.2.0
+
+      # ---------------------------------------------------------------------
+      # 3. NVDA portable zip のダウンロード
+      #    bocoup/aria-at-automation-nvda-builds のリリースから取得。
+      #    nvda_version 未指定なら latest。
+      # ---------------------------------------------------------------------
+      - name: Download nvda-portable zip
+        uses: robinraju/release-downloader@v1.9
+        id: nvda-portable-download
+        with:
+          repository: "bocoup/aria-at-automation-nvda-builds"
+          tarBall: false
+          zipBall: false
+          tag: ${{ inputs.nvda_version }}
+          latest: ${{ inputs.nvda_version == '' }}
+          out-file-path: "nvda-portable"
+          extract: false  # zip のまま置く (run-tester.ps1 側で展開する)
+
+      # ---------------------------------------------------------------------
+      # 4. Node / ブラウザのセットアップ
+      # ---------------------------------------------------------------------
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - uses: browser-actions/setup-chrome@v1
+        if: (inputs.browser || 'chrome') == 'chrome'
+        with:
+          chrome-version: stable
+
+      - uses: browser-actions/setup-firefox@v1
+        if: inputs.browser == 'firefox'
+
+      # ---------------------------------------------------------------------
+      # 5. Scream (仮想オーディオドライバ) のインストール
+      #    GitHub-hosted Windows ランナーには物理オーディオデバイスが無く、
+      #    NVDA が音声出力を試みた際に例外を吐くのを防ぐため必須。
+      #    署名の信頼ストアへの追加 → devcon でドライバ install、までを行う。
+      # ---------------------------------------------------------------------
+      - name: Install Scream (Virtual Audio Driver)
+        shell: pwsh
+        run: |
+          Start-Service audio*
+          Invoke-WebRequest https://github.com/duncanthrax/scream/releases/download/3.6/Scream3.6.zip -OutFile C:\Scream3.6.zip
+          Expand-Archive -Path C:\Scream3.6.zip -DestinationPath C:\Scream
+          $cert = (Get-AuthenticodeSignature C:\Scream\Install\driver\Scream.sys).SignerCertificate
+          $store = [System.Security.Cryptography.X509Certificates.X509Store]::new("TrustedPublisher", "LocalMachine")
+          $store.Open("ReadWrite")
+          $store.Add($cert)
+          $store.Close()
+          cd C:\Scream\Install\driver
+          C:\Scream\Install\helpers\devcon install Scream.inf *Scream
+
+      # ---------------------------------------------------------------------
+      # 6. nvda-at-automation の Go サーバを build
+      #    run-tester.ps1 から main.exe として起動される。
+      # ---------------------------------------------------------------------
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: nvda-at-automation/Server/go.sum
+
+      - name: Compile at-automation driver
+        shell: pwsh
+        run: |
+          cd nvda-at-automation\Server
+          go build main\main.go
+
+      # ---------------------------------------------------------------------
+      # 7. aria-at テストプランの build
+      #    aria-at/build/ 配下にテストの最終形が出力される。
+      #    run-tester.ps1 の --plan-workingdir はここを指す。
+      # ---------------------------------------------------------------------
+      - name: "aria-at: npm install"
+        shell: pwsh
+        run: |
+          cd aria-at
+          npm install
+
+      - name: "aria-at: npm run build"
+        shell: pwsh
+        run: |
+          cd aria-at
+          npm run build
+
+      # ---------------------------------------------------------------------
+      # 8. テスト本体の実行
+      #     run-tester.ps1 が NVDA / at-driver / webdriver / harness を順に起動。
+      #     30 分のタイムアウトを設定 (ハングアップ対策)。
+      #     downloaded_files は配列なので [0] で zip パスを取り出す。
+      # ---------------------------------------------------------------------
+      - name: Run harness
+        shell: pwsh
+        timeout-minutes: 30
+        env:
+          NVDA_PORTABLE_ZIP: ${{ fromJson(steps.nvda-portable-download.outputs.downloaded_files)[0] }}
+        run: |
+          & .\run-tester.ps1
+
+      # ---------------------------------------------------------------------
+      # 9. テスト結果サマリの抽出
+      #     harness-run.log (harness の生 JSON) を as-test/extract-result.jq で
+      #     整形して summary.log に書き出す。冗長なログ (atDriverComms /
+      #     speechEvent の生ログ等) を削ぎ落とし、テスト結果本体だけ残す。
+      #     - jq は windows-2025 ランナーにプリインストール済み
+      #     - if: always()           → harness が失敗しても可能なら整形を試みる
+      #     - continue-on-error: true → jq 失敗で workflow 全体を落とさない
+      #       (harness 出力が想定外のフォーマットだった場合の保険)
+      # ---------------------------------------------------------------------
+      - name: Extract result summary via jq
+        shell: pwsh
+        if: always()
+        continue-on-error: true
+        run: |
+          if (Test-Path harness-run.log) {
+            jq -f as-test/extract-result.jq harness-run.log | Out-File -Encoding utf8 summary.log
+          } else {
+            Write-Output "harness-run.log not found, skipping summary extraction"
+          }
+
+      # ---------------------------------------------------------------------
+      # 10. ログとスクショを artifact としてアップロード
+      #     - *.log: harness-run / webdriver / at-driver / nvda / http-testing /
+      #              summary (jq 整形済み) 等
+      #     - *.png: テスト前後 + notepad 起動後のスクリーンショット
+      #     失敗時も always() で必ず収集する。
+      # ---------------------------------------------------------------------
+      - name: upload *.{log,png}
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logs
+          path: |
+            ${{ github.workspace }}\*.log
+            ${{ github.workspace }}\*.png
